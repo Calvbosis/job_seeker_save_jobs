@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Job card – save heart with snackbar (mobile)</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap">
+<style>
+  :root {
+    --heart: #BA1A1A;
+    --heart-light: #FF897D;
+    --green: #378243;
+    --text: #101828;
+    --muted: #475467;
+    --border: #D0D5DD;
+    --chip: #F2F4F7;
+    --snack-bg: #322F35;
+    --snack-text: #F5EFF7;
+  }
+  :root { color-scheme: light; box-sizing: border-box; padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; display: flex; flex-direction: column; align-items: center; gap: 48px;
+    padding: 40px 16px 64px; background: #EEF0F3;
+    font-family: Lato, Roboto, Arial, sans-serif; color: var(--text);
+  }
+
+  /* Phone frame */
+  .phone { width: 360px; max-width: 100%; height: 740px; border-radius: 44px; background: #1D1F22; padding: 12px; flex-shrink: 0; }
+  .screen { position: relative; width: 100%; height: 100%; border-radius: 34px; overflow: hidden; background: #F9FAFB; display: flex; flex-direction: column; }
+  .status { height: 36px; flex-shrink: 0; display: flex; justify-content: center; align-items: center; }
+  .status span { width: 90px; height: 22px; border-radius: 12px; background: #1D1F22; }
+  .appbar { height: 52px; flex-shrink: 0; display: flex; align-items: center; padding: 0 16px; font-size: 18px; font-weight: 700; background: #fff; border-bottom: 1px solid #EAECF0; }
+  .list { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+
+  /* Card */
+  .card { position: relative; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 16px; }
+  .logo { width: 44px; height: 44px; border: 1px solid #EAECF0; border-radius: 8px; display: flex; align-items: center; justify-content: center; }
+  .logo span { width: 36px; height: 36px; border-radius: 50%; background: #14283A; color: #7FD08A; display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 13px; }
+  .logo.grey span { background: #D0D5DD; }
+  .card h2 { font-size: 18px; line-height: 1.3; margin: 12px 0 4px; font-weight: 700; padding-right: 32px; }
+  .meta { color: var(--muted); font-size: 14px; margin-bottom: 12px; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .chip { background: var(--chip); border-radius: 4px; padding: 6px 8px; font-size: 13px; }
+  .foot { display: flex; align-items: center; justify-content: space-between; }
+  .time { color: var(--muted); font-size: 13px; }
+  .cta { background: var(--green); color: #fff; border: none; border-radius: 8px; padding: 9px 14px; font: inherit; font-size: 15px; cursor: pointer; }
+
+  /* Save heart (medium burst) */
+  .save { position: absolute; top: 8px; right: 8px; width: 40px; height: 40px; border: none; background: transparent; border-radius: 50%; padding: 0; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+  .save:focus-visible { outline: 2px solid #1570EF; outline-offset: 2px; }
+  .save::before { content: ""; position: absolute; inset: 0; border-radius: 50%; background: #475467; opacity: 0; transition: opacity 150ms; }
+  .save.is-saved::before { background: #BA1A1A; }
+  .save:hover::before { opacity: .08; }
+  .save:active::before { opacity: .12; }
+  @media (hover: none) { .save:hover::before { opacity: 0; } .save:active::before { opacity: .12; } }
+  .save svg { width: 24px; height: 24px; overflow: visible; position: relative; z-index: 1; }
+  .save .outline { fill: none; stroke: var(--muted); stroke-width: 1.8; transition: stroke 150ms; }
+  .save .fill { fill: var(--heart); opacity: 0; transition: opacity 120ms; }
+  .save.is-saved .outline { stroke: var(--heart); }
+  .save.is-saved .fill { opacity: 1; }
+  .save.anim-save svg { animation: heart-pop 350ms cubic-bezier(.3, 1.4, .5, 1); }
+  .save.anim-unsave svg { animation: heart-settle 160ms ease-out; }
+  .ring { position: absolute; left: 50%; top: 50%; width: 24px; height: 24px; margin: -12px 0 0 -12px; border-radius: 50%; border: 1.5px solid var(--heart); opacity: 0; pointer-events: none; }
+  .anim-save .ring { animation: heart-ring 400ms ease-out; }
+  .dot { position: absolute; left: 50%; top: 50%; width: 4px; height: 4px; margin: -2px; border-radius: 50%; background: var(--heart); opacity: 0; pointer-events: none; }
+  .dot:nth-of-type(even) { background: var(--heart-light); }
+  .anim-save .dot { animation: heart-dot 420ms cubic-bezier(.2, .7, .3, 1) forwards; }
+  @keyframes heart-pop { 0% { transform: scale(.8); } 55% { transform: scale(1.15); } 100% { transform: scale(1); } }
+  @keyframes heart-settle { 0% { transform: scale(.9); } 100% { transform: scale(1); } }
+  @keyframes heart-ring { 0% { transform: scale(.5); opacity: .4; } 100% { transform: scale(1.5); opacity: 0; } }
+  @keyframes heart-dot { 0% { transform: rotate(var(--a)) translateY(-8px) scale(1); opacity: 1; } 100% { transform: rotate(var(--a)) translateY(-19px) scale(.2); opacity: 0; } }
+
+  /* Angular Material (M3) snackbar, no action */
+  .snack-wrap { position: absolute; left: 0; right: 0; bottom: 0; padding: 0 8px 24px; display: flex; justify-content: center; pointer-events: none; }
+  .snack { width: 100%; min-height: 48px; background: var(--snack-bg); color: var(--snack-text); border-radius: 4px; display: flex; align-items: center; padding: 0 16px; font-size: 14px; letter-spacing: .25px; opacity: 0; transform: scale(.8); }
+  .snack.enter { animation: snack-in 150ms cubic-bezier(0, 0, .2, 1) forwards; }
+  .snack.exit { animation: snack-out 75ms linear forwards; }
+  @keyframes snack-in { from { opacity: 0; transform: scale(.8); } to { opacity: 1; transform: scale(1); } }
+  @keyframes snack-out { from { opacity: 1; transform: scale(1); } to { opacity: 0; transform: scale(1); } }
+
+  @media (prefers-reduced-motion: reduce) {
+    .save svg, .ring, .dot { animation: none !important; }
+  }
+
+  /* Dev notes */
+  .notes { width: 100%; max-width: 720px; background: #fff; border: 1px solid var(--border); border-radius: 8px; padding: 32px; line-height: 1.6; font-size: 15px; }
+  .notes h1 { font-size: 22px; margin: 0 0 8px; }
+  .notes h2 { font-size: 17px; margin: 32px 0 8px; }
+  .notes p { margin: 0 0 12px; color: #344054; }
+  .notes ul { margin: 0 0 12px; padding-left: 20px; color: #344054; }
+  .notes li { margin-bottom: 4px; }
+  .notes pre { background: #F2F4F7; border-radius: 8px; padding: 16px; overflow-x: auto; font-size: 13px; line-height: 1.5; margin: 0 0 12px; }
+  .notes code { font-family: "Roboto Mono", Menlo, Consolas, monospace; font-size: 13px; }
+  .notes p code, .notes li code { background: #F2F4F7; padding: 1px 5px; border-radius: 4px; }
+  .notes table { width: 100%; border-collapse: collapse; font-size: 14px; margin-bottom: 12px; }
+  .notes th, .notes td { text-align: left; padding: 8px 10px; border-bottom: 1px solid #EAECF0; vertical-align: top; }
+  .notes th { font-weight: 700; color: var(--text); }
+  .notes td { color: #344054; }
+  .swatch { display: inline-block; width: 12px; height: 12px; border-radius: 3px; vertical-align: -1px; margin-right: 6px; }
+</style>
+</head>
+<body>
+
+<div class="phone">
+  <div class="screen">
+    <div class="status"><span></span></div>
+    <div class="appbar">Jobs</div>
+
+    <div class="list">
+      <article class="card">
+        <div class="logo"><span>jj</span></div>
+        <button class="save" id="heart" type="button" aria-label="Save job" aria-pressed="false">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path class="fill" d="M12 20.5s-7.5-4.6-9.5-9.2C1.2 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.6 0 5.4 3.8 4.1 6.8-2 4.6-9.5 9.2-9.5 9.2z"/>
+            <path class="outline" d="M12 20.5s-7.5-4.6-9.5-9.2C1.2 8.3 3 4.5 6.6 4.5c2.1 0 3.6 1.2 5.4 3.2 1.8-2 3.3-3.2 5.4-3.2 3.6 0 5.4 3.8 4.1 6.8-2 4.6-9.5 9.2-9.5 9.2z"/>
+          </svg>
+          <span class="ring"></span>
+          <span class="dot" style="--a:30deg"></span><span class="dot" style="--a:90deg"></span>
+          <span class="dot" style="--a:150deg"></span><span class="dot" style="--a:210deg"></span>
+          <span class="dot" style="--a:270deg"></span><span class="dot" style="--a:330deg"></span>
+        </button>
+        <h2>REDBULL MERCHANDISER - East Rand - Gauteng</h2>
+        <div class="meta">JOBJACK · Boksburg, Boksburg</div>
+        <div class="chips">
+          <span class="chip">Contract – Part-time</span>
+          <span class="chip">R4,500 pm</span>
+          <span class="chip">✓ Benefits</span>
+        </div>
+        <div class="foot">
+          <span class="time">1 hour ago</span>
+          <button class="cta" type="button">View details</button>
+        </div>
+      </article>
+
+      <article class="card" aria-hidden="true">
+        <div class="logo grey"><span></span></div>
+        <h2 style="color:#98A2B3">Cashier - Bellville</h2>
+        <div class="meta">Retail store · Bellville</div>
+        <div class="chips"><span class="chip">Full-time</span><span class="chip">R5,200 pm</span></div>
+      </article>
+    </div>
+
+    <div class="snack-wrap">
+      <div class="snack" id="snack" role="status" aria-live="polite"></div>
+    </div>
+  </div>
+</div>
+
+<section class="notes">
+  <h1>Dev notes: save heart animation</h1>
+  <p>Tap the heart in the prototype above to see it in action. Everything is plain CSS keyframes triggered by a class on the button, so there's no animation library to add.</p>
+
+  <h2>1. What it does</h2>
+  <ul>
+    <li><strong>Save:</strong> the heart fills red and pops, a faint ring ripples out, and 6 small dots burst away. All done in about 420ms. Then the snackbar shows "Job saved".</li>
+    <li><strong>Unsave:</strong> the heart goes back to the grey outline with a tiny settle (no burst). The snackbar shows "Removed from saved jobs".</li>
+  </ul>
+
+  <h2>2. Markup</h2>
+  <p>One button holding the heart SVG (two paths: a fill underneath and an outline on top), one ring and six dots. The ring and dots sit invisible until the animation runs.</p>
+<pre><code>&lt;button class="save"
+  [class.is-saved]="saved"
+  [class.anim-save]="anim === 'save'"
+  [class.anim-unsave]="anim === 'unsave'"
+  (click)="toggleSave()"
+  (animationend)="anim = null"
+  [attr.aria-pressed]="saved"
+  [attr.aria-label]="saved ? 'Remove from saved jobs' : 'Save job'"&gt;
+  &lt;svg viewBox="0 0 24 24" aria-hidden="true"&gt;
+    &lt;path class="fill" d="…heart path…" /&gt;
+    &lt;path class="outline" d="…heart path…" /&gt;
+  &lt;/svg&gt;
+  &lt;span class="ring"&gt;&lt;/span&gt;
+  @for (a of [30, 90, 150, 210, 270, 330]; track a) {
+    &lt;span class="dot" [style.--a]="a + 'deg'"&gt;&lt;/span&gt;
+  }
+&lt;/button&gt;</code></pre>
+
+  <h2>3. Animation specs</h2>
+  <table>
+    <tr><th>Part</th><th>Movement</th><th>Duration and easing</th></tr>
+    <tr><td>Heart (save)</td><td>Scale 0.8 → 1.15 → 1</td><td>350ms, <code>cubic-bezier(.3, 1.4, .5, 1)</code></td></tr>
+    <tr><td>Ring</td><td>Scale 0.5 → 1.5, opacity 40% → 0</td><td>400ms, ease-out</td></tr>
+    <tr><td>Dots ×6</td><td>Move 8px → 19px from centre, shrink to 0.2, fade out</td><td>420ms, <code>cubic-bezier(.2, .7, .3, 1)</code></td></tr>
+    <tr><td>Heart (unsave)</td><td>Scale 0.9 → 1</td><td>160ms, ease-out</td></tr>
+  </table>
+  <p>The dots are 4px circles spaced 60° apart, starting at 30° so none fire straight up. They alternate between the two reds below.</p>
+
+  <h2>4. The CSS</h2>
+<pre><code>.save .fill    { fill: #BA1A1A; opacity: 0; transition: opacity 120ms; }
+.save .outline { fill: none; stroke: #475467; stroke-width: 1.8; }
+.save.is-saved .fill    { opacity: 1; }
+.save.is-saved .outline { stroke: #BA1A1A; }
+
+.save.anim-save svg   { animation: heart-pop 350ms cubic-bezier(.3,1.4,.5,1); }
+.save.anim-unsave svg { animation: heart-settle 160ms ease-out; }
+.anim-save .ring { animation: heart-ring 400ms ease-out; }
+.anim-save .dot  { animation: heart-dot 420ms cubic-bezier(.2,.7,.3,1) forwards; }
+
+@keyframes heart-pop    { 0% { transform: scale(.8) } 55% { transform: scale(1.15) } 100% { transform: scale(1) } }
+@keyframes heart-settle { 0% { transform: scale(.9) } 100% { transform: scale(1) } }
+@keyframes heart-ring   { 0% { transform: scale(.5); opacity: .4 } 100% { transform: scale(1.5); opacity: 0 } }
+@keyframes heart-dot {
+  0%   { transform: rotate(var(--a)) translateY(-8px)  scale(1);  opacity: 1 }
+  100% { transform: rotate(var(--a)) translateY(-19px) scale(.2); opacity: 0 }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .save svg, .ring, .dot { animation: none !important; }
+}</code></pre>
+  <p>The ring and dots are absolutely positioned at the centre of the button with <code>opacity: 0</code> by default. See the prototype source for the full positioning styles.</p>
+
+  <h2>5. Component logic</h2>
+<pre><code>saved = false;
+anim: 'save' | 'unsave' | null = null;
+
+toggleSave() {
+  this.saved = !this.saved;
+  this.anim = null;                       // clear first so a fast second tap replays
+  requestAnimationFrame(() =&gt; {
+    this.anim = this.saved ? 'save' : 'unsave';
+  });
+
+  this.snackBar.open(
+    this.saved ? 'Job saved' : 'Removed from saved jobs',
+    undefined,
+    { duration: 4000 }
+  );
+
+  // call the save / unsave API here
+}</code></pre>
+  <ul>
+    <li>Update <code>saved</code> straight away on tap. Don't wait for the API or the animation to finish.</li>
+    <li>If the API call fails, set <code>saved</code> back without animation and show an error snackbar.</li>
+    <li><code>MatSnackBar.open()</code> closes any open snackbar for us, so tapping quickly never stacks them. Use the default position (bottom centre). If there's a bottom nav, the snackbar must sit above it.</li>
+  </ul>
+
+  <h2>6. Hover and press</h2>
+  <p>A 40px circle sits behind the heart as a state layer, the same pattern as Angular Material icon buttons. It uses the heart's current colour at low opacity, so it's grey when unsaved and red when saved.</p>
+<pre><code>.save::before {
+  content: ""; position: absolute; inset: 0; border-radius: 50%;
+  background: #475467; opacity: 0; transition: opacity 150ms;
+}
+.save.is-saved::before { background: #BA1A1A; }
+.save:hover::before    { opacity: .08; }
+.save:active::before   { opacity: .12; }
+
+/* touch screens: no sticky hover after a tap */
+@media (hover: none) {
+  .save:hover::before  { opacity: 0; }
+  .save:active::before { opacity: .12; }
+}</code></pre>
+  <p>If the button is built with <code>mat-icon-button</code>, this state layer comes for free. Just make sure its colour follows the saved state.</p>
+
+  <h2>7. Colours</h2>
+  <table>
+    <tr><th>Token</th><th>Value</th><th>Used for</th></tr>
+    <tr><td>Heart red</td><td><span class="swatch" style="background:#BA1A1A"></span>#BA1A1A</td><td>Saved fill and outline, ring, odd dots, saved hover circle</td></tr>
+    <tr><td>Heart red light</td><td><span class="swatch" style="background:#FF897D"></span>#FF897D</td><td>Even dots</td></tr>
+    <tr><td>Outline grey</td><td><span class="swatch" style="background:#475467"></span>#475467</td><td>Unsaved outline, unsaved hover circle</td></tr>
+  </table>
+
+  <h2>8. Checklist</h2>
+  <ul>
+    <li>Tap target is 40 × 40px with the 24px heart centred.</li>
+    <li>Keyboard focus ring is visible.</li>
+    <li>Hover circle shows on desktop and doesn't stick after a tap on mobile.</li>
+    <li>Reduced motion turns off all animation, but the state still changes.</li>
+    <li>Tapping fast restarts the animation instead of queuing it.</li>
+    <li>The heart's state matches the saved jobs list after a page refresh.</li>
+  </ul>
+</section>
+
+<script>
+  const heart = document.getElementById('heart');
+  const snack = document.getElementById('snack');
+  let timer;
+
+  heart.addEventListener('click', () => {
+    const saved = !heart.classList.contains('is-saved');
+    heart.classList.toggle('is-saved', saved);
+    heart.setAttribute('aria-pressed', saved);
+    heart.setAttribute('aria-label', saved ? 'Remove from saved jobs' : 'Save job');
+    heart.classList.remove('anim-save', 'anim-unsave');
+    void heart.offsetWidth;
+    heart.classList.add(saved ? 'anim-save' : 'anim-unsave');
+    showSnack(saved ? 'Job saved' : 'Removed from saved jobs');
+  });
+
+  function showSnack(text) {
+    clearTimeout(timer);
+    snack.classList.remove('enter', 'exit');
+    void snack.offsetWidth;
+    snack.textContent = text;
+    snack.classList.add('enter');
+    timer = setTimeout(() => {
+      snack.classList.remove('enter');
+      snack.classList.add('exit');
+    }, 4000);
+  }
+</script>
+</body>
+</html>
